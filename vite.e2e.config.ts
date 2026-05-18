@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  root: ".",
+  root: "estore-ui",
   plugins: [react(), tailwindcss(), tsconfigPaths()],
   server: {
     port: 5173,
