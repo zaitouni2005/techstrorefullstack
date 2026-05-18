@@ -75,9 +75,3 @@ Ouvrir `http://localhost:5173`.
 ├── estore-api/                       # Synced depuis abdelaziz-ebourki/estore-api
 └── estore-ui/                        # Synced depuis abdelaziz-ebourki/estore-ui
 ```
-
-## Secrets GitHub
-
-| Secret | Description |
-|--------|-------------|
-| `E2E_PAT` | Personal Access Token avec accès aux 3 repos |
