@@ -1,16 +1,16 @@
-import type {
-  Product,
-  Category,
-  User,
-  Order,
-  DashboardStats,
-  SalesPoint,
-  PaginatedResponse,
-  TopProduct,
-  Review,
-  DashboardActivity,
-  Cart,
-  ShippingOption,
+import {
+  type Product,
+  type Category,
+  type User,
+  type Order,
+  type DashboardStats,
+  type SalesPoint,
+  type PaginatedResponse,
+  type TopProduct,
+  type Review,
+  type DashboardActivity,
+  type Cart,
+  type ShippingOption,
 } from "@/types";
 
 const getToken = () => localStorage.getItem("token");
