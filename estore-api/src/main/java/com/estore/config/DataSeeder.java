@@ -28,16 +28,22 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Seeding MongoDB with sample reviews...");
 
         List<Review> reviews = List.of(
-                createReview(1L, 3L, "Jean Dupont", 5, "Excellent smartphone ! L'appareil photo est incroyable et la batterie tient deux jours."),
+                createReview(1L, 3L, "Jean Dupont", 5,
+                        "Excellent smartphone ! L'appareil photo est incroyable et la batterie tient deux jours."),
                 createReview(1L, 4L, "Marie Curie", 4, "Très bon produit mais un peu lourd. L'écran est magnifique."),
                 createReview(2L, 2L, "Test User", 4, "Super téléphone, l'IA est vraiment utile au quotidien."),
-                createReview(6L, 3L, "Jean Dupont", 5, "Meilleur ordinateur portable que j'ai jamais eu. Le silence est impressionnant."),
-                createReview(6L, 4L, "Marie Curie", 5, "Parfait pour le développement. L'écran est magnifique et la batterie tient 15h."),
-                createReview(12L, 4L, "Marie Curie", 4, "Excellent pour la prise de notes et le dessin. Procreate est incroyable dessus."),
-                createReview(17L, 3L, "Jean Dupont", 5, "Le meilleur casque audio du marché. La réduction de bruit est bluffante."),
-                createReview(18L, 2L, "Test User", 5, "Meilleurs écouteurs sans fil. La qualité sonore est exceptionnelle."),
-                createReview(19L, 3L, "Jean Dupont", 4, "Souris très confortable, la molette est parfaite pour la productivité.")
-        );
+                createReview(6L, 3L, "Jean Dupont", 5,
+                        "Meilleur ordinateur portable que j'ai jamais eu. Le silence est impressionnant."),
+                createReview(6L, 4L, "Marie Curie", 5,
+                        "Parfait pour le développement. L'écran est magnifique et la batterie tient 15h."),
+                createReview(12L, 4L, "Marie Curie", 4,
+                        "Excellent pour la prise de notes et le dessin. Procreate est incroyable dessus."),
+                createReview(17L, 3L, "Jean Dupont", 5,
+                        "Le meilleur casque audio du marché. La réduction de bruit est bluffante."),
+                createReview(18L, 2L, "Test User", 5,
+                        "Meilleurs écouteurs sans fil. La qualité sonore est exceptionnelle."),
+                createReview(19L, 3L, "Jean Dupont", 4,
+                        "Souris très confortable, la molette est parfaite pour la productivité."));
 
         reviewRepository.saveAll(reviews);
         log.info("Seeded {} sample reviews into MongoDB.", reviews.size());
