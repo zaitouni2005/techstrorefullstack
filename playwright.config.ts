@@ -16,8 +16,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "./estore-ui/node_modules/.bin/vite --port 5173 --root estore-ui --config vite.e2e.config.ts",
+    command: "npx vite --port 5173 --config ../vite.e2e.config.ts",
     port: 5173,
+    cwd: "estore-ui",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },
