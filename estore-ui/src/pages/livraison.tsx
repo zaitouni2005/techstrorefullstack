@@ -82,7 +82,7 @@ export function LivraisonPage() {
             </Button>
           </div>
           <div className="relative group">
-            <div className="absolute -inset-4 bg-gradient-to-br from-primary/10 to-primary-glow/5 rounded-[3rem] blur-xl group-hover:scale-105 transition-transform duration-500" />
+            <div className="absolute -inset-4 bg-linear-to-br from-primary/10 to-primary-glow/5 rounded-[3rem] blur-xl group-hover:scale-105 transition-transform duration-500" />
             <div className="relative bg-card rounded-[2.5rem] border border-border p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">

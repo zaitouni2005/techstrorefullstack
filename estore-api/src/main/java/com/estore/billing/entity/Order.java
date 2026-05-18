@@ -25,12 +25,39 @@ public class Order {
     @JoinColumn(name = "user_id")
     private User user;
 
+    private String customerName;
+
     private LocalDateTime orderDate;
-    
+
     private Double totalAmount;
 
-    private String status; // PENDING, COMPLETED, CANCELLED
+    private String status;
+
+    private String shippingAddress;
+
+    private String paymentMethod;
+
+    @Column(columnDefinition = "TEXT")
+    private String trackingJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String statusHistoryJson;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

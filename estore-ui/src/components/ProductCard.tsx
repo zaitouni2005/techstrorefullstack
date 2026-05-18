@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Star, ShoppingCart } from "lucide-react";
-import type { Product } from "@/data/products";
+import type { Product } from "@/types";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ProductCard({ product }: { product: Product }) {
   const { add } = useCart();
@@ -15,7 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       to={`/products/${product.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:border-primary/40 hover:shadow-(--shadow-card)"
     >
       <div className="relative aspect-square overflow-hidden bg-surface">
         {discount > 0 && (
@@ -51,13 +52,20 @@ export function ProductCard({ product }: { product: Product }) {
           <span>{product.brand}</span>
           <div className="flex items-center gap-0.5 text-amber-400">
             <Star className="h-3 w-3 fill-amber-400" />
-            <span>{product.rating}</span>
+            <span>{product.rating > 0 ? product.rating : "—"}</span>
           </div>
         </div>
 
-        <div className="mt-1 font-display font-semibold text-foreground group-hover:text-primary transition line-clamp-1">
-          {product.name}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="mt-1 font-display font-semibold text-foreground group-hover:text-primary transition line-clamp-1 cursor-default">
+              {product.name}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{product.name}</p>
+          </TooltipContent>
+        </Tooltip>
 
         <div className="mt-auto pt-3 flex items-baseline gap-2">
           <span className="font-display text-lg font-bold">{product.price} €</span>

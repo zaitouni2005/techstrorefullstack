@@ -14,4 +14,5 @@ public class ProductDto {
     private List<String> allImageUrls;
     private Long categoryId;
     private Integer stockQuantity;
+    private Long brandId; // Add brandId to the DTO
 }

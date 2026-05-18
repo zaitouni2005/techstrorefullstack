@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import { createBrowserRouter, RouterProvider, Outlet, useLocation } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, ScrollRestoration } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import { HomePage } from "@/pages/index";
 import { ProductsPage } from "@/pages/products";
@@ -10,10 +10,16 @@ import { ProductDetailPage } from "@/pages/products.$id";
 import { CartPage } from "@/pages/cart";
 import { CheckoutPage } from "@/pages/checkout";
 import { LoginPage } from "@/pages/login";
+import { RegisterPage } from "@/pages/register";
 import { ContactPage } from "@/pages/contact";
 import { LivraisonPage } from "@/pages/livraison";
 import { RetoursPage } from "@/pages/retours";
+import { ReturnRequestPage } from "@/pages/returns.request.$id";
 import { ProfilePage } from "@/pages/profile";
+import { OrdersPage } from "@/pages/orders";
+import { OrderTrackingPage } from "@/pages/orders.$id";
+import { PrivacyPage } from "@/pages/privacy";
+import { TermsPage } from "@/pages/terms";
 
 // Admin Imports
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -27,15 +33,10 @@ import { AdminPlaceholder } from "@/pages/admin/placeholder";
 import { AdminGuard } from "@/components/AdminGuard";
 
 function Layout() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [pathname]);
-
   return (
     <CartProvider>
       <div className="flex min-h-screen flex-col">
+        <ScrollRestoration />
         <Navbar />
         <main className="flex-1">
           <Outlet />
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
+        path: "register",
+        element: <RegisterPage />,
+      },
+      {
         path: "contact",
         element: <ContactPage />,
       },
@@ -89,8 +94,28 @@ const router = createBrowserRouter([
         element: <RetoursPage />,
       },
       {
+        path: "returns/request/:id",
+        element: <ReturnRequestPage />,
+      },
+      {
         path: "profile",
         element: <ProfilePage />,
+      },
+      {
+        path: "orders",
+        element: <OrdersPage />,
+      },
+      {
+        path: "orders/:id",
+        element: <OrderTrackingPage />,
+      },
+      {
+        path: "privacy",
+        element: <PrivacyPage />,
+      },
+      {
+        path: "terms",
+        element: <TermsPage />,
       },
     ],
   },
@@ -141,5 +166,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }

@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS profiles (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Brands Table
+CREATE TABLE IF NOT EXISTS brands (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    logo_url VARCHAR(255)
+);
+
 -- Categories Table
 CREATE TABLE IF NOT EXISTS categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -42,7 +49,9 @@ CREATE TABLE IF NOT EXISTS products (
     current_price DOUBLE NOT NULL,
     old_price DOUBLE,
     category_id BIGINT,
-    FOREIGN KEY (category_id) REFERENCES categories(id)
+    brand_id BIGINT,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (brand_id) REFERENCES brands(id)
 );
 
 -- Product Images Table

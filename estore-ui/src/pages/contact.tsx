@@ -54,8 +54,8 @@ export function ContactPage() {
           </div>
         </div>
 
-        <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-12 shadow-[var(--shadow-elegant)] relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 via-primary to-primary/30" />
+        <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-12 shadow-(--shadow-elegant) relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-primary/30 via-primary to-primary/30" />
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-4">

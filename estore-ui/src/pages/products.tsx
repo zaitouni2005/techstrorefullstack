@@ -1,44 +1,121 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Star, SlidersHorizontal, Loader2 } from "lucide-react";
-import { brands, categories } from "@/data/products";
+import { type Category } from "@/types";
 import { ProductCard } from "@/components/ProductCard";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { useProductFilters } from "@/hooks/use-product-filters";
-
-const PER_PAGE = 8;
+import { api } from "@/services/api";
+import { toast } from "sonner";
 
 export function ProductsPage() {
-  const { filtered, isLoading, filters } = useProductFilters();
-  const { cat, setCat, selectedBrands, setBrands, price, setPrice, minRating, setMinRating } =
-    filters;
-
-  const [page, setPage] = useState(1);
+  const { products, isLoading, loadingMore, hasMore, error, loadProducts, loadMore, filters } =
+    useProductFilters();
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allBrands, setAllBrands] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const view = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const [cats, brs] = await Promise.all([api.categories.list(), api.products.brands()]);
+        setAllCategories(cats);
+        setAllBrands(brs);
+      } catch {
+        toast.error("Impossible de charger les filtres");
+      }
+    };
+    loadFilters();
+  }, []);
+
+  const {
+    cat,
+    setCat,
+    selectedBrands,
+    toggleBrand,
+    price,
+    setPrice,
+    minRating,
+    setMinRating,
+    minDiscount,
+    setMinDiscount,
+  } = filters;
+
+  const [localPrice, setLocalPrice] = useState(price);
+  const dragging = useRef(false);
+  const pMin = price[0];
+  const pMax = price[1];
+  useEffect(() => {
+    if (!dragging.current) setLocalPrice([pMin, pMax]);
+  }, [pMin, pMax]);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-6 py-10">
       <div className="mb-8">
         <h1 className="font-display text-3xl md:text-4xl font-bold">Catalogue</h1>
         <p className="text-muted-foreground mt-1">
-          {isLoading ? "Chargement..." : `${filtered.length} produits disponibles`}
+          {isLoading ? "Chargement..." : `${products.length} produits affichés`}
         </p>
       </div>
 
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       <div className="grid lg:grid-cols-[260px_1fr] gap-8">
-        {/* Filters */}
         <aside className={`${open ? "block" : "hidden"} lg:block`}>
-          <div className="sticky top-24 space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <FilterSection title="Promotions">
+              <div className="space-y-1">
+                {[50, 40, 30, 20, 10, 1].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setMinDiscount(d)}
+                    className={`block w-full text-left text-sm py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${
+                      minDiscount === d
+                        ? "text-primary font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {d}% et plus
+                  </button>
+                ))}
+                <button
+                  onClick={() => setMinDiscount(0)}
+                  className={`block w-full text-left text-sm py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${
+                    minDiscount === 0
+                      ? "text-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Toutes
+                </button>
+              </div>
+            </FilterSection>
+
             <FilterSection title="Catégorie">
               <button
-                onClick={() => {
-                  setCat("");
-                  setPage(1);
-                }}
-                className={`block w-full text-left text-sm py-1.5 transition-colors ${
+                onClick={() => setCat("")}
+                className={`block w-full text-left text-sm py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${
                   !cat
                     ? "text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -46,14 +123,11 @@ export function ProductsPage() {
               >
                 Toutes
               </button>
-              {categories.map((c) => (
+              {allCategories.map((c) => (
                 <button
                   key={c.slug}
-                  onClick={() => {
-                    setCat(c.slug);
-                    setPage(1);
-                  }}
-                  className={`block w-full text-left text-sm py-1.5 transition-colors ${
+                  onClick={() => setCat(c.slug)}
+                  className={`block w-full text-left text-sm py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${
                     cat === c.slug
                       ? "text-primary font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -69,31 +143,33 @@ export function ProductsPage() {
                 min={1}
                 max={2500}
                 step={10}
-                value={price}
+                value={localPrice}
                 onValueChange={(v) => {
-                  setPrice(v as [number, number]);
-                  setPage(1);
+                  dragging.current = true;
+                  setLocalPrice(v as [number, number]);
                 }}
+                onValueCommit={(v) => {
+                  dragging.current = false;
+                  setPrice(v as [number, number]);
+                }}
+                className="[&>div:first-child>div:first-child]:h-2"
               />
               <div className="mt-2 flex justify-between text-xs text-muted-foreground font-medium">
-                <span>{price[0]}€</span>
-                <span>{price[1]}€</span>
+                <span>{localPrice[0]}€</span>
+                <span>{localPrice[1]}€</span>
               </div>
             </FilterSection>
 
             <FilterSection title="Marque">
               <div className="space-y-2">
-                {brands.map((b) => (
+                {allBrands.map((b) => (
                   <label
                     key={b}
                     className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors group"
                   >
                     <Checkbox
                       checked={selectedBrands.includes(b)}
-                      onCheckedChange={(v) => {
-                        setBrands((cur) => (v ? [...cur, b] : cur.filter((x) => x !== b)));
-                        setPage(1);
-                      }}
+                      onCheckedChange={() => toggleBrand(b)}
                     />
                     <span
                       className={
@@ -114,11 +190,8 @@ export function ProductsPage() {
                 {[0, 3, 4, 4.5].map((r) => (
                   <button
                     key={r}
-                    onClick={() => {
-                      setMinRating(r);
-                      setPage(1);
-                    }}
-                    className={`flex items-center gap-1 text-sm py-1 transition-colors ${
+                    onClick={() => setMinRating(r)}
+                    className={`flex items-center gap-1 text-sm py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${
                       minRating === r
                         ? "text-primary font-semibold"
                         : "text-muted-foreground hover:text-foreground"
@@ -140,51 +213,57 @@ export function ProductsPage() {
         </aside>
 
         <div>
-          <button
+          <Button
+            variant="outline"
             onClick={() => setOpen(!open)}
-            className="lg:hidden mb-6 inline-flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-semibold bg-card shadow-sm hover:bg-accent transition"
+            className="lg:hidden mb-6 rounded-full px-6 py-2.5 h-auto shadow-sm"
           >
             <SlidersHorizontal className="h-4 w-4" />{" "}
             {open ? "Masquer les filtres" : "Afficher les filtres"}
-          </button>
+          </Button>
+
+          {error && !isLoading && (
+            <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-6 text-center mb-8">
+              <p className="text-destructive font-medium">{error}</p>
+              <Button onClick={loadProducts} variant="outline" className="mt-4 gap-2">
+                <Loader2 className="h-4 w-4" /> Réessayer
+              </Button>
+            </div>
+          )}
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-32 text-muted-foreground animate-in fade-in duration-500">
-              <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary/40" />
-              <p className="font-medium">Chargement du catalogue...</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-square rounded-2xl bg-muted animate-pulse" />
+              ))}
             </div>
-          ) : view.length === 0 ? (
+          ) : products.length === 0 ? (
             <div className="rounded-3xl border-2 border-dashed border-border p-20 text-center text-muted-foreground bg-muted/5 animate-in zoom-in-95 duration-300">
               <p className="text-lg font-semibold">Aucun résultat</p>
               <p className="text-sm mt-1">Essayez d'ajuster vos critères de recherche.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
-              {view.map((p) => (
-                <ProductCard key={p.id} product={p} />
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
 
-          {!isLoading && pages > 1 && (
-            <div className="mt-16 flex justify-center gap-2">
-              {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => {
-                    setPage(n);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className={`h-11 w-11 rounded-xl text-sm font-bold transition-all duration-200 ${
-                    page === n
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
-                      : "bg-card border border-border hover:bg-accent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
+          {!isLoading && products.length > 0 && (
+            <>
+              <div ref={sentinelRef} className="h-10" />
+              {loadingMore && (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+                </div>
+              )}
+              {!hasMore && (
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  Tous les produits sont chargés ({products.length} au total).
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

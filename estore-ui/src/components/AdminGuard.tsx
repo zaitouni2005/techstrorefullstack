@@ -1,11 +1,11 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export function AdminGuard() {
-  // Mock check: in a real app, this would be a check against an auth context or token
-  const isAdmin = localStorage.getItem("is_admin") === "true";
+  const { role } = useAuth();
 
-  if (!isAdmin) {
-    // Redirect to login if not admin
+  if (role !== "admin") {
+    // Redirect to login if not admin (includes not logged in)
     return <Navigate to="/login" replace />;
   }
 

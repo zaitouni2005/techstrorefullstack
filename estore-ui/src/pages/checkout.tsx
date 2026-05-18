@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Truck, CreditCard, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ShoppingBag, Truck, CreditCard, ShieldCheck, ArrowLeft, Loader2, Clock } from "lucide-react";
+import { Link, useNavigate, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { api } from "@/services/api";
 
 export function CheckoutPage() {
   const { items, total, clear } = useCart();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [payMethod, setPayMethod] = useState("card");
+  const [payMethod, setPayMethod] = useState("cod");
+  const [shipping, setShipping] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    zip: "",
+  });
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (items.length === 0) {
     return (
@@ -26,15 +38,27 @@ export function CheckoutPage() {
     );
   }
 
-  const handleOrder = (e: React.FormEvent) => {
+  if (!user) {
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  }
+
+  const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Commande confirmée ! Merci de votre confiance.");
+    try {
+      const order = await api.orders.create({
+        items: items.map((i) => ({ productId: i.product.id, quantity: i.qty })),
+        shippingAddress: `${shipping.firstName} ${shipping.lastName}, ${shipping.address}, ${shipping.zip} ${shipping.city}`,
+        paymentMethod: payMethod,
+      });
+      toast.success("Commande confirmée !");
       clear();
-      navigate("/");
-    }, 2000);
+      navigate(`/orders/${order.id}`);
+    } catch {
+      toast.error("Erreur lors de la commande");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,25 +76,55 @@ export function CheckoutPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstname">Prénom</Label>
-                <Input id="firstname" required className="rounded-xl border-border bg-card" />
+                <Input
+                  id="firstname"
+                  required
+                  value={shipping.firstName}
+                  onChange={(e) => setShipping((s) => ({ ...s, firstName: e.target.value }))}
+                  className="rounded-xl border-border bg-card"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastname">Nom</Label>
-                <Input id="lastname" required className="rounded-xl border-border bg-card" />
+                <Input
+                  id="lastname"
+                  required
+                  value={shipping.lastName}
+                  onChange={(e) => setShipping((s) => ({ ...s, lastName: e.target.value }))}
+                  className="rounded-xl border-border bg-card"
+                />
               </div>
             </div>
             <div className="space-y-2 mt-4">
               <Label htmlFor="address">Adresse</Label>
-              <Input id="address" required className="rounded-xl border-border bg-card" />
+              <Input
+                id="address"
+                required
+                value={shipping.address}
+                onChange={(e) => setShipping((s) => ({ ...s, address: e.target.value }))}
+                className="rounded-xl border-border bg-card"
+              />
             </div>
             <div className="grid sm:grid-cols-2 gap-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="city">Ville</Label>
-                <Input id="city" required className="rounded-xl border-border bg-card" />
+                <Input
+                  id="city"
+                  required
+                  value={shipping.city}
+                  onChange={(e) => setShipping((s) => ({ ...s, city: e.target.value }))}
+                  className="rounded-xl border-border bg-card"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zip">Code postal</Label>
-                <Input id="zip" required className="rounded-xl border-border bg-card" />
+                <Input
+                  id="zip"
+                  required
+                  value={shipping.zip}
+                  onChange={(e) => setShipping((s) => ({ ...s, zip: e.target.value }))}
+                  className="rounded-xl border-border bg-card"
+                />
               </div>
             </div>
           </Section>
@@ -78,41 +132,24 @@ export function CheckoutPage() {
           <Section icon={CreditCard} title="Méthode de paiement">
             <div className="grid gap-3">
               <PayOption
-                active={payMethod === "card"}
-                onClick={() => setPayMethod("card")}
+                active={payMethod === "cod"}
+                onClick={() => setPayMethod("cod")}
+                title="Paiement à la livraison"
+                desc="Payez en espèces ou par carte à la réception"
+              />
+              <PayOption
+                active={false}
+                comingSoon
                 title="Carte bancaire"
                 desc="Visa, Mastercard, AMEX"
               />
               <PayOption
-                active={payMethod === "paypal"}
-                onClick={() => setPayMethod("paypal")}
+                active={false}
+                comingSoon
                 title="PayPal"
                 desc="Paiement sécurisé en un clic"
               />
             </div>
-
-            {payMethod === "card" && (
-              <div className="mt-6 space-y-4 p-5 rounded-2xl bg-muted/30 border border-border/50 animate-in fade-in duration-300">
-                <div className="space-y-2">
-                  <Label htmlFor="card-number">Numéro de carte</Label>
-                  <Input
-                    id="card-number"
-                    placeholder="0000 0000 0000 0000"
-                    className="rounded-xl"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="exp">Expiration</Label>
-                    <Input id="exp" placeholder="MM/YY" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cvc">CVC</Label>
-                    <Input id="cvc" placeholder="123" className="rounded-xl" />
-                  </div>
-                </div>
-              </div>
-            )}
           </Section>
         </form>
 
@@ -121,7 +158,7 @@ export function CheckoutPage() {
             <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-6">
               <ShoppingBag className="h-5 w-5 text-primary" /> Résumé de la commande
             </h2>
-            <div className="space-y-4 max-h-[300px] overflow-auto pr-2 scrollbar-thin">
+            <div className="space-y-4 max-h-75 overflow-auto pr-2 scrollbar-thin">
               {items.map((item) => (
                 <div key={item.product.id} className="flex gap-3 text-sm">
                   <img
@@ -162,7 +199,7 @@ export function CheckoutPage() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                `Payer ${total.toFixed(2)}€`
+                `Passer la commande`
               )}
             </Button>
             <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -197,33 +234,46 @@ function Section({ icon: Icon, title, children }: SectionProps) {
 
 interface PayOptionProps {
   active: boolean;
-  onClick: () => void;
+  onClick?: () => void;
   title: string;
   desc: string;
+  comingSoon?: boolean;
 }
 
-function PayOption({ active, onClick, title, desc }: PayOptionProps) {
+function PayOption({ active, onClick, title, desc, comingSoon }: PayOptionProps) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      disabled={comingSoon}
+      onClick={comingSoon ? undefined : onClick}
       className={`flex w-full items-center justify-between rounded-2xl border-2 p-5 text-left transition-all ${
-        active
-          ? "border-primary bg-primary/5 shadow-inner"
-          : "border-border bg-card hover:border-border/80 hover:bg-muted/50"
+        comingSoon
+          ? "border-dashed border-border/40 bg-muted/20 opacity-60 cursor-not-allowed"
+          : active
+            ? "border-primary bg-primary/5 shadow-inner"
+            : "border-border bg-card hover:border-border/80 hover:bg-muted/50"
       }`}
     >
       <div>
-        <div className={`font-bold ${active ? "text-primary" : ""}`}>{title}</div>
+        <div className={`font-bold ${active && !comingSoon ? "text-primary" : ""} flex items-center gap-2`}>
+          {title}
+          {comingSoon && (
+            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 h-5 font-semibold gap-1">
+              <Clock className="w-3 h-3" /> Bientôt disponible
+            </Badge>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
       </div>
-      <div
-        className={`h-5 w-5 rounded-full border-2 transition-all flex items-center justify-center ${
-          active ? "border-primary" : "border-border"
-        }`}
-      >
-        {active && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
-      </div>
+      {!comingSoon && (
+        <div
+          className={`h-5 w-5 rounded-full border-2 transition-all flex items-center justify-center ${
+            active ? "border-primary" : "border-border"
+          }`}
+        >
+          {active && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
+        </div>
+      )}
     </button>
   );
 }

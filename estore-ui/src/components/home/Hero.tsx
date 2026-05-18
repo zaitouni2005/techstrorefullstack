@@ -3,6 +3,13 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 
 export function Hero() {
+  const scrollToProducts = () => {
+    const section = document.getElementById("popular-products");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 md:px-6 pt-12 pb-16 md:pt-20 md:pb-24">
@@ -13,7 +20,7 @@ export function Hero() {
             </span>
             <h1 className="mt-5 font-display text-4xl md:text-6xl font-bold leading-[1.05]">
               Le meilleur de la{" "}
-              <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                 high-tech
               </span>
               , livré chez vous.
@@ -25,16 +32,16 @@ export function Hero() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/products"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:bg-primary-glow transition"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-(--shadow-elegant) hover:bg-primary-glow transition"
               >
                 Voir les produits <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                to="/products"
+              <button
+                onClick={scrollToProducts}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold hover:bg-accent transition"
               >
                 Explorer les offres
-              </Link>
+              </button>
             </div>
             <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
               {[
@@ -51,17 +58,17 @@ export function Hero() {
           </div>
           <div className="relative animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
             <div
-              className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-primary/20 to-primary-glow/10 blur-3xl"
+              className="absolute -inset-8 rounded-[3rem] bg-linear-to-br from-primary/20 to-primary-glow/10 blur-3xl"
               aria-hidden
             />
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-elegant)]">
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-(--shadow-elegant)">
               <img
                 src={hero}
                 alt="Produits high-tech TechStore"
                 width={1536}
                 height={1024}
                 loading="eager"
-                className="aspect-[4/3] w-full object-cover transition-transform duration-700 hover:scale-105"
+                className="aspect-4/3 w-full object-cover transition-transform duration-700 hover:scale-105"
               />
             </div>
           </div>

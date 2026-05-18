@@ -1,8 +1,19 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Zap, Github, Twitter, Instagram } from "lucide-react";
+import { api } from "@/services/api";
+import type { Category } from "@/types";
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    api.categories
+      .list()
+      .then(setCategories)
+      .catch(() => console.error("Échec du chargement des catégories"));
+  }, []);
 
   return (
     <footer className="border-t border-border bg-surface">
@@ -23,13 +34,28 @@ export function Footer() {
               au meilleur prix.
             </p>
             <div className="mt-6 flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition">
+              <a
+                href="https://google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition"
+              >
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition">
+              <a
+                href="https://google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition"
+              >
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition">
+              <a
+                href="https://google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition"
+              >
                 <Github className="h-5 w-5" />
               </a>
             </div>
@@ -46,30 +72,16 @@ export function Footer() {
                   Tous les produits
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/products?category=Smartphones"
-                  className="text-muted-foreground hover:text-foreground transition"
-                >
-                  Smartphones
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=Ordinateurs"
-                  className="text-muted-foreground hover:text-foreground transition"
-                >
-                  Ordinateurs
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=Accessoires"
-                  className="text-muted-foreground hover:text-foreground transition"
-                >
-                  Accessoires
-                </Link>
-              </li>
+              {categories.map((category) => (
+                <li key={category.id}>
+                  <Link
+                    to={`/products?category=${category.slug}`}
+                    className="text-muted-foreground hover:text-foreground transition"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -134,15 +146,12 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <p>© {year} TechStore. Tous droits réservés.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-foreground">
+            <Link to="/privacy" className="hover:text-foreground">
               Confidentialité
-            </a>
-            <a href="#" className="hover:text-foreground">
-              CGV
-            </a>
-            <a href="#" className="hover:text-foreground">
-              Cookies
-            </a>
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Conditions d'utilisation
+            </Link>
           </div>
         </div>
       </div>

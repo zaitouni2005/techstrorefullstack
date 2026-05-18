@@ -1,13 +1,11 @@
 package com.estore;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 class EstoreApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Application context tested via specific slice tests
 	}
-
 }

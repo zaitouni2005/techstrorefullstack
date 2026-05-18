@@ -3,18 +3,30 @@ package com.estore.billing.service;
 import com.estore.billing.entity.Order;
 import com.estore.billing.entity.OrderItem;
 import com.estore.billing.repository.OrderRepository;
+import com.estore.catalog.entity.Product;
+import com.estore.catalog.entity.ProductImage;
+import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
 import com.estore.exception.ResourceNotFoundException;
 import com.estore.inventory.service.InventoryService;
+import com.estore.shared.dto.*;
 import com.estore.shopping.entity.Cart;
 import com.estore.shopping.entity.CartItem;
 import com.estore.shopping.service.ShoppingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,56 +37,239 @@ public class BillingService {
     private final ShoppingService shoppingService;
     private final InventoryService inventoryService;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
+
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Transactional
-    public Order placeOrder(Long userId) {
-        Cart cart = shoppingService.getCartByUserId(userId);
-        if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cart is empty");
-        }
+    public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 1. Stock check
-        for (CartItem item : cart.getItems()) {
-            if (item.getProduct().getInventory().getQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for product: " + item.getProduct().getName());
-            }
-        }
-
-        // 2. Create Order
         Order order = new Order();
-        User user = userRepository.findById(userId).get();
         order.setUser(user);
+        order.setCustomerName(user.getProfile() != null
+                ? user.getProfile().getFirstName() + " " + user.getProfile().getLastName()
+                : user.getEmail());
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("COMPLETED");
+        order.setStatus("pending");
+        order.setShippingAddress(request.getShippingAddress());
+        order.setPaymentMethod(request.getPaymentMethod());
 
-        List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setUnitPrice(cartItem.getProduct().getCurrentPrice());
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            List<OrderItem> orderItems = request.getItems().stream().map(itemReq -> {
+                Product product = productRepository.findById(itemReq.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.getProductId()));
 
-            // 3. Update Stock
-            inventoryService.decreaseStock(cartItem.getProduct().getId(), cartItem.getQuantity());
+                if (product.getInventory() != null && product.getInventory().getQuantity() < itemReq.getQuantity()) {
+                    throw new RuntimeException("Insufficient stock for product: " + product.getName());
+                }
 
-            return orderItem;
-        }).collect(Collectors.toList());
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setProduct(product);
+                orderItem.setQuantity(itemReq.getQuantity());
+                orderItem.setUnitPrice(product.getCurrentPrice());
+                orderItem.setName(product.getName());
 
-        order.setItems(orderItems);
-        order.setTotalAmount(orderItems.stream().mapToDouble(i -> i.getUnitPrice() * i.getQuantity()).sum());
+                if (product.getImages() != null && !product.getImages().isEmpty()) {
+                    String img = product.getImages().stream()
+                            .filter(ProductImage::isMain)
+                            .findFirst()
+                            .map(ProductImage::getUrl)
+                            .orElse(product.getImages().get(0).getUrl());
+                    orderItem.setImage(img);
+                }
+
+                inventoryService.decreaseStock(product.getId(), itemReq.getQuantity());
+
+                return orderItem;
+            }).collect(Collectors.toList());
+
+            order.setItems(orderItems);
+            order.setTotalAmount(orderItems.stream().mapToDouble(i -> i.getUnitPrice() * i.getQuantity()).sum());
+        } else {
+            Cart cart = shoppingService.getCartEntityByUserId(userId);
+            if (cart.getItems().isEmpty()) {
+                throw new RuntimeException("Cart is empty");
+            }
+
+            List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
+                Product product = cartItem.getProduct();
+
+                if (product.getInventory().getQuantity() < cartItem.getQuantity()) {
+                    throw new RuntimeException("Insufficient stock for product: " + product.getName());
+                }
+
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setProduct(product);
+                orderItem.setQuantity(cartItem.getQuantity());
+                orderItem.setUnitPrice(product.getCurrentPrice());
+                orderItem.setName(product.getName());
+
+                if (product.getImages() != null && !product.getImages().isEmpty()) {
+                    String img = product.getImages().stream()
+                            .filter(ProductImage::isMain)
+                            .findFirst()
+                            .map(ProductImage::getUrl)
+                            .orElse(product.getImages().get(0).getUrl());
+                    orderItem.setImage(img);
+                }
+
+                inventoryService.decreaseStock(product.getId(), cartItem.getQuantity());
+
+                return orderItem;
+            }).collect(Collectors.toList());
+
+            order.setItems(orderItems);
+            order.setTotalAmount(orderItems.stream().mapToDouble(i -> i.getUnitPrice() * i.getQuantity()).sum());
+
+            shoppingService.clearCart(userId);
+        }
+
         Order savedOrder = orderRepository.save(order);
-
-        // 4. Empty Cart
-        shoppingService.clearCart(userId);
-
-        return savedOrder;
+        return convertToOrderResponse(savedOrder);
     }
 
-    public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+    public PaginatedResponse<OrderResponse> getOrdersByUserId(Long userId, int page, int limit, String status) {
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 20;
+        Pageable pageable = PageRequest.of(page - 1, limit);
+
+        Page<Order> orderPage;
+        if (status != null && !status.isBlank()) {
+            orderPage = orderRepository.findByUserIdAndStatus(userId, status, pageable);
+        } else {
+            orderPage = orderRepository.findByUserId(userId, pageable);
+        }
+
+        List<OrderResponse> data = orderPage.getContent().stream()
+                .map(this::convertToOrderResponse)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<OrderResponse>builder()
+                .data(data)
+                .total(orderPage.getTotalElements())
+                .page(page)
+                .limit(limit)
+                .totalPages(orderPage.getTotalPages())
+                .build();
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public PaginatedResponse<OrderResponse> getAllOrders(int page, int limit, String status, Long customerId) {
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 20;
+        Pageable pageable = PageRequest.of(page - 1, limit);
+
+        Page<Order> orderPage;
+        if (status != null && !status.isBlank() && customerId != null) {
+            orderPage = orderRepository.findByUserIdAndStatus(customerId, status, pageable);
+        } else if (status != null && !status.isBlank()) {
+            orderPage = orderRepository.findByStatus(status, pageable);
+        } else if (customerId != null) {
+            orderPage = orderRepository.findByUserId(customerId, pageable);
+        } else {
+            orderPage = orderRepository.findAll(pageable);
+        }
+
+        List<OrderResponse> data = orderPage.getContent().stream()
+                .map(this::convertToOrderResponse)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<OrderResponse>builder()
+                .data(data)
+                .total(orderPage.getTotalElements())
+                .page(page)
+                .limit(limit)
+                .totalPages(orderPage.getTotalPages())
+                .build();
+    }
+
+    public OrderResponse getOrderById(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        return convertToOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatus(Long id, String newStatus) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        OrderStatusHistory historyEntry = OrderStatusHistory.builder()
+                .status(order.getStatus())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        List<OrderStatusHistory> history = getStatusHistory(order);
+        history.add(historyEntry);
+        order.setStatusHistoryJson(toJson(history));
+        order.setStatus(newStatus);
+
+        return convertToOrderResponse(orderRepository.save(order));
+    }
+
+    private OrderResponse convertToOrderResponse(Order order) {
+        String customerName = order.getCustomerName();
+        if (customerName == null && order.getUser().getProfile() != null) {
+            customerName = order.getUser().getProfile().getFirstName() + " " + order.getUser().getProfile().getLastName();
+        }
+        if (customerName == null) customerName = order.getUser().getEmail();
+
+        List<OrderItemResponse> items = order.getItems().stream()
+                .map(item -> OrderItemResponse.builder()
+                        .productId(item.getProduct().getId())
+                        .name(item.getName() != null ? item.getName() : item.getProduct().getName())
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .image(item.getImage())
+                        .build())
+                .collect(Collectors.toList());
+
+        int itemCount = items.stream().mapToInt(OrderItemResponse::getQuantity).sum();
+
+        return OrderResponse.builder()
+                .id(order.getId())
+                .customerId(order.getUser().getId())
+                .customerName(customerName)
+                .items(items)
+                .itemCount(itemCount)
+                .total(order.getTotalAmount())
+                .status(order.getStatus())
+                .date(order.getOrderDate())
+                .shippingAddress(order.getShippingAddress())
+                .paymentMethod(order.getPaymentMethod())
+                .tracking(parseTracking(order.getTrackingJson()))
+                .statusHistory(getStatusHistory(order))
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .build();
+    }
+
+    private OrderTracking parseTracking(String trackingJson) {
+        if (trackingJson == null || trackingJson.isBlank()) return null;
+        try {
+            return objectMapper.readValue(trackingJson, OrderTracking.class);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private List<OrderStatusHistory> getStatusHistory(Order order) {
+        if (order.getStatusHistoryJson() == null || order.getStatusHistoryJson().isBlank()) return new java.util.ArrayList<>();
+        try {
+            return objectMapper.readValue(order.getStatusHistoryJson(), new TypeReference<List<OrderStatusHistory>>() {});
+        } catch (JsonProcessingException e) {
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            return "[]";
+        }
     }
 }

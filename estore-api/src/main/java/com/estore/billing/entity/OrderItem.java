@@ -29,5 +29,9 @@ public class OrderItem {
 
     private Integer quantity;
 
-    private Double unitPrice; // Price at the time of order
+    private Double unitPrice;
+
+    private String name;
+
+    private String image;
 }

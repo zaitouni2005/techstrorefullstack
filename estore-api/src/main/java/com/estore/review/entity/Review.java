@@ -16,11 +16,11 @@ public class Review {
 
     @Id
     private String id;
-    
+
     private Long productId;
     private Long userId;
-    private String authorName;
-    private Integer note; // 1 to 5
+    private String userName;
+    private Integer rating;
     private String comment;
-    private LocalDateTime date;
+    private LocalDateTime createdAt;
 }
