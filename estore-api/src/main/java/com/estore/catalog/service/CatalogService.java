@@ -12,6 +12,7 @@ import com.estore.catalog.repository.ProductRepository;
 import com.estore.exception.ResourceNotFoundException;
 import com.estore.inventory.entity.Inventory;
 import com.estore.inventory.repository.InventoryRepository;
+import com.estore.shared.dto.BrandResponse;
 import com.estore.shared.dto.CategoryResponse;
 import com.estore.shared.dto.PaginatedResponse;
 import com.estore.shared.dto.ProductResponse;
@@ -185,10 +186,14 @@ public class CatalogService {
                 .collect(Collectors.toList());
     }
 
-    public List<String> getAllBrands() {
+    public List<BrandResponse> getAllBrands() {
         return brandRepository.findAll().stream()
-                .map(Brand::getName)
-                .sorted()
+                .map(b -> BrandResponse.builder()
+                        .id(b.getId())
+                        .name(b.getName())
+                        .image(b.getLogoUrl())
+                        .build())
+                .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
                 .collect(Collectors.toList());
     }
 
@@ -298,10 +303,13 @@ public class CatalogService {
         Double rating = product.getRating() != null ? product.getRating() : 0.0;
         Integer stock = product.getStock();
 
+        String brandImage = product.getBrand() != null ? product.getBrand().getLogoUrl() : null;
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .brand(product.getBrandName())
+                .brandImage(brandImage)
                 .category(product.getCategoryName())
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .price(product.getCurrentPrice())

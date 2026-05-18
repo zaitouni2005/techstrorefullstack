@@ -16,6 +16,7 @@ public class ProductResponse {
     private Long id;
     private String name;
     private String brand;
+    private String brandImage;
     private String category;
     private Long categoryId;
     private Double price;

@@ -9,20 +9,20 @@ INSERT IGNORE INTO categories (name, slug, description, image_url) VALUES ('Tabl
 INSERT IGNORE INTO categories (name, slug, description, image_url) VALUES ('Accessoires', 'accessoires', 'Gadgets and accessories', 'https://images.unsplash.com/photo-1498049794561-7780e7231661');
 
 -- Seed Brands
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Apple', 'https://example.com/logos/apple.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Samsung', 'https://example.com/logos/samsung.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Dell', 'https://example.com/logos/dell.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('HP', 'https://example.com/logos/hp.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Sony', 'https://example.com/logos/sony.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Microsoft', 'https://example.com/logos/microsoft.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Logitech', 'https://example.com/logos/logitech.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Google', 'https://example.com/logos/google.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('OnePlus', 'https://example.com/logos/oneplus.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Xiaomi', 'https://example.com/logos/xiaomi.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Lenovo', 'https://example.com/logos/lenovo.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('ASUS', 'https://example.com/logos/asus.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('Bose', 'https://example.com/logos/bose.png');
-INSERT IGNORE INTO brands (name, logo_url) VALUES ('JBL', 'https://example.com/logos/jbl.png');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Apple', 'https://images.unsplash.com/photo-1611188431972-e085c14418e1?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Samsung', 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Dell', 'https://images.unsplash.com/photo-1611188431972-e085c14418e1?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('HP', 'https://images.unsplash.com/photo-1541627365049-465311d053a1?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Sony', 'https://images.unsplash.com/photo-1559532517-3e6e917f9b5d?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Microsoft', 'https://images.unsplash.com/photo-1574864017778-2c10027191c2?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Logitech', 'https://images.unsplash.com/photo-1593349054460-1b87b3253b7e?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Google', 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('OnePlus', 'https://images.unsplash.com/photo-1678911821544-88b7e408b8a6?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Xiaomi', 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Lenovo', 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('ASUS', 'https://images.unsplash.com/photo-1611078489935-0cb964de46d6?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('Bose', 'https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=200');
+INSERT IGNORE INTO brands (name, logo_url) VALUES ('JBL', 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=200');
 
 -- Seed Users (Passwords: admin123, user123, password123)
 -- Passwords: admin123, user123 (same for all user accounts)

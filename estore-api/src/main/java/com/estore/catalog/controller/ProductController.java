@@ -2,6 +2,7 @@ package com.estore.catalog.controller;
 
 import com.estore.catalog.dto.ProductDto;
 import com.estore.catalog.service.CatalogService;
+import com.estore.shared.dto.BrandResponse;
 import com.estore.shared.dto.PaginatedResponse;
 import com.estore.shared.dto.ProductResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,8 +61,8 @@ public class ProductController {
     }
 
     @GetMapping("/brands")
-    @Operation(summary = "Get all brands", description = "Retrieve a list of all product brand names")
-    public List<String> getAllBrands() {
+    @Operation(summary = "Get all brands", description = "Retrieve a list of all brands with their images")
+    public List<BrandResponse> getAllBrands() {
         return catalogService.getAllBrands();
     }
 
