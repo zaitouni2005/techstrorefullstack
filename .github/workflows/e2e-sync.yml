@@ -68,9 +68,6 @@ jobs:
 
       - name: Run integration tests
         run: npm test
-        env:
-          VITE_REAL_API: "true"
-          VITE_API_URL: "http://localhost:9090"
 
       - name: Upload Playwright report
         if: always()

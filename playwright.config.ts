@@ -16,7 +16,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "VITE_REAL_API=true VITE_API_URL=http://localhost:9090 ./estore-ui/node_modules/.bin/vite --port 5173 --root estore-ui",
+    command: "./estore-ui/node_modules/.bin/vite --port 5173 --root estore-ui --config vite.e2e.config.ts",
     port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
