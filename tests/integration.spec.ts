@@ -38,7 +38,7 @@ test.describe("E-Store Integration", () => {
 
   test("navbar has brand link", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("TechStore")).toBeVisible();
+    await expect(page.getByText("TechStore").first()).toBeVisible();
   });
 
   test("footer is present on homepage", async ({ page }) => {
