@@ -8,11 +8,11 @@ import com.estore.catalog.entity.ProductImage;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
+import com.estore.exception.InsufficientStockException;
 import com.estore.exception.ResourceNotFoundException;
 import com.estore.inventory.service.InventoryService;
 import com.estore.shared.dto.*;
 import com.estore.shopping.entity.Cart;
-import com.estore.shopping.entity.CartItem;
 import com.estore.shopping.service.ShoppingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,8 +37,7 @@ public class BillingService {
     private final InventoryService inventoryService;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
@@ -61,28 +59,10 @@ public class BillingService {
                 Product product = productRepository.findById(itemReq.getProductId())
                         .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.getProductId()));
 
-                if (product.getInventory() != null && product.getInventory().getQuantity() < itemReq.getQuantity()) {
-                    throw new RuntimeException("Insufficient stock for product: " + product.getName());
-                }
+                checkStock(product, itemReq.getQuantity());
 
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setProduct(product);
-                orderItem.setQuantity(itemReq.getQuantity());
-                orderItem.setUnitPrice(product.getCurrentPrice());
-                orderItem.setName(product.getName());
-
-                if (product.getImages() != null && !product.getImages().isEmpty()) {
-                    String img = product.getImages().stream()
-                            .filter(ProductImage::isMain)
-                            .findFirst()
-                            .map(ProductImage::getUrl)
-                            .orElse(product.getImages().get(0).getUrl());
-                    orderItem.setImage(img);
-                }
-
+                OrderItem orderItem = createOrderItem(order, product, itemReq.getQuantity());
                 inventoryService.decreaseStock(product.getId(), itemReq.getQuantity());
-
                 return orderItem;
             }).collect(Collectors.toList());
 
@@ -96,40 +76,46 @@ public class BillingService {
 
             List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
                 Product product = cartItem.getProduct();
+                checkStock(product, cartItem.getQuantity());
 
-                if (product.getInventory().getQuantity() < cartItem.getQuantity()) {
-                    throw new RuntimeException("Insufficient stock for product: " + product.getName());
-                }
-
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setProduct(product);
-                orderItem.setQuantity(cartItem.getQuantity());
-                orderItem.setUnitPrice(product.getCurrentPrice());
-                orderItem.setName(product.getName());
-
-                if (product.getImages() != null && !product.getImages().isEmpty()) {
-                    String img = product.getImages().stream()
-                            .filter(ProductImage::isMain)
-                            .findFirst()
-                            .map(ProductImage::getUrl)
-                            .orElse(product.getImages().get(0).getUrl());
-                    orderItem.setImage(img);
-                }
-
+                OrderItem orderItem = createOrderItem(order, product, cartItem.getQuantity());
                 inventoryService.decreaseStock(product.getId(), cartItem.getQuantity());
-
                 return orderItem;
             }).collect(Collectors.toList());
 
             order.setItems(orderItems);
             order.setTotalAmount(orderItems.stream().mapToDouble(i -> i.getUnitPrice() * i.getQuantity()).sum());
-
             shoppingService.clearCart(userId);
         }
 
         Order savedOrder = orderRepository.save(order);
         return convertToOrderResponse(savedOrder);
+    }
+
+    private void checkStock(Product product, int quantity) {
+        if (product.getInventory() == null || product.getInventory().getQuantity() < quantity) {
+            throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
+        }
+    }
+
+    private OrderItem createOrderItem(Order order, Product product, int quantity) {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrder(order);
+        orderItem.setProduct(product);
+        orderItem.setQuantity(quantity);
+        orderItem.setUnitPrice(product.getCurrentPrice());
+        orderItem.setName(product.getName());
+
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            String img = product.getImages().stream()
+                    .filter(ProductImage::isMain)
+                    .findFirst()
+                    .map(ProductImage::getUrl)
+                    .orElse(product.getImages().get(0).getUrl());
+            orderItem.setImage(img);
+        }
+
+        return orderItem;
     }
 
     public PaginatedResponse<OrderResponse> getOrdersByUserId(Long userId, int page, int limit, String status) {

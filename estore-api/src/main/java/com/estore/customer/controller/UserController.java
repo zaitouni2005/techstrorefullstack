@@ -1,9 +1,7 @@
 package com.estore.customer.controller;
 
-import com.estore.customer.entity.User;
-import com.estore.customer.repository.UserRepository;
+import com.estore.config.UserHelper;
 import com.estore.customer.service.UserManagementService;
-import com.estore.exception.ResourceNotFoundException;
 import com.estore.shared.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserManagementService userManagementService;
-    private final UserRepository userRepository;
+    private final UserHelper userHelper;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -33,8 +31,7 @@ public class UserController {
 
     @PatchMapping("/me")
     public UserResponse updateMyName(@RequestBody UpdateNameRequest request, Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var user = userHelper.getCurrentUser(authentication);
         return userManagementService.updateMyName(user.getId(), request);
     }
 }

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Creates a new user account and profile")
     public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegisterRequest signUpRequest) {
-        return ResponseEntity.ok(authService.registerUser(signUpRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(signUpRequest));
     }
 
     @GetMapping("/me")

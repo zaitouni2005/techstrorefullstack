@@ -2,6 +2,7 @@ package com.estore.inventory.repository;
 
 import com.estore.inventory.entity.Inventory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -9,4 +10,7 @@ import java.util.Optional;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByProductId(Long productId);
+
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantity <= 5")
+    long countLowStock();
 }

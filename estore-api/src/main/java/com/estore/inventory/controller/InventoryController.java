@@ -21,7 +21,7 @@ public class InventoryController {
         return inventoryService.getInventoryByProductId(productId);
     }
 
-    @PutMapping("/{productId}")
+    @PatchMapping("/{productId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update product stock", description = "Manually update the stock quantity for a product. Restricted to ADMIN users.")
     public Inventory updateStock(@PathVariable Long productId, @RequestParam Integer quantity) {

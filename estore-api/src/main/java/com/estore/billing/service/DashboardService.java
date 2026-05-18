@@ -8,6 +8,7 @@ import com.estore.customer.repository.UserRepository;
 import com.estore.inventory.repository.InventoryRepository;
 import com.estore.shared.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,19 +27,22 @@ public class DashboardService {
     private final UserRepository userRepository;
 
     public DashboardStatsResponse getStats() {
-        List<Order> allOrders = orderRepository.findAll();
-        double revenue = allOrders.stream().mapToDouble(Order::getTotalAmount).sum();
+        double revenue = orderRepository.getTotalRevenue();
         long orderCount = orderRepository.count();
         long productCount = productRepository.count();
         long customerCount = userRepository.count();
-        long lowStock = inventoryRepository.findAll().stream()
-                .filter(i -> i.getQuantity() <= 5)
-                .count();
+        long lowStock = inventoryRepository.countLowStock();
+
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        double recentRevenue = orderRepository.getRevenueSince(sevenDaysAgo);
+        long recentOrders = orderRepository.countOrdersSince(sevenDaysAgo);
+
+        double revenueChange = revenue > 0 ? (recentRevenue / (revenue / (Math.max(orderCount, 1) / Math.max(recentOrders, 1)))) * 100 : 0;
 
         return DashboardStatsResponse.builder()
                 .revenue(revenue)
-                .revenueChange(0.0)
-                .orders((long) orderCount)
+                .revenueChange(Math.min(revenueChange, 100.0))
+                .orders(orderCount)
                 .ordersChange(0.0)
                 .products(productCount)
                 .productsChange(0.0)
@@ -49,19 +53,21 @@ public class DashboardService {
     }
 
     public List<SalesPoint> getSalesData() {
-        List<Order> allOrders = orderRepository.findAll();
         LocalDate today = LocalDate.now();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDateTime sevenDaysAgo = today.minusDays(6).atStartOfDay();
 
         Map<String, Double> salesByDay = new LinkedHashMap<>();
         for (int i = 6; i >= 0; i--) {
             salesByDay.put(today.minusDays(i).format(fmt), 0.0);
         }
 
-        for (Order order : allOrders) {
-            if (order.getOrderDate() != null) {
-                String dayKey = order.getOrderDate().toLocalDate().format(fmt);
-                salesByDay.merge(dayKey, order.getTotalAmount(), Double::sum);
+        List<Object[]> rows = orderRepository.getSalesByDaySince(sevenDaysAgo);
+        for (Object[] row : rows) {
+            String day = row[0] != null ? row[0].toString() : null;
+            Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+            if (day != null && salesByDay.containsKey(day)) {
+                salesByDay.put(day, total);
             }
         }
 
@@ -80,11 +86,9 @@ public class DashboardService {
     }
 
     public List<DashboardActivity> getRecentActivity() {
-        List<Order> recentOrders = orderRepository.findAll().stream()
-                .sorted((a, b) -> b.getOrderDate() != null && a.getOrderDate() != null
-                        ? b.getOrderDate().compareTo(a.getOrderDate()) : 0)
-                .limit(8)
-                .collect(Collectors.toList());
+        List<Order> recentOrders = orderRepository.findAll(
+                PageRequest.of(0, 8, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "orderDate")))
+                .getContent();
 
         return recentOrders.stream()
                 .map(order -> DashboardActivity.builder()
@@ -96,32 +100,14 @@ public class DashboardService {
     }
 
     public List<TopProduct> getTopProducts() {
-        List<Order> allOrders = orderRepository.findAll();
+        List<Object[]> rows = orderRepository.findTopProducts(PageRequest.of(0, 5));
 
-        Map<Long, TopProduct> productMap = new HashMap<>();
-        for (Order order : allOrders) {
-            if (order.getItems() != null) {
-                order.getItems().forEach(item -> {
-                    Long pid = item.getProduct().getId();
-                    double revenue = item.getUnitPrice() * item.getQuantity();
-                    long units = item.getQuantity();
-                    productMap.merge(pid, TopProduct.builder()
-                            .productId(pid)
-                            .name(item.getName() != null ? item.getName() : item.getProduct().getName())
-                            .revenue(revenue)
-                            .units(units)
-                            .build(), (existing, incoming) -> {
-                        existing.setRevenue(existing.getRevenue() + incoming.getRevenue());
-                        existing.setUnits(existing.getUnits() + incoming.getUnits());
-                        return existing;
-                    });
-                });
-            }
-        }
-
-        return productMap.values().stream()
-                .sorted((a, b) -> Double.compare(b.getRevenue(), a.getRevenue()))
-                .limit(5)
+        return rows.stream().map(row -> TopProduct.builder()
+                        .productId(((Number) row[0]).longValue())
+                        .name((String) row[1])
+                        .revenue(((Number) row[2]).doubleValue())
+                        .units(((Number) row[3]).longValue())
+                        .build())
                 .collect(Collectors.toList());
     }
 

@@ -2,6 +2,7 @@ package com.estore.inventory.service;
 
 import com.estore.inventory.entity.Inventory;
 import com.estore.inventory.repository.InventoryRepository;
+import com.estore.exception.InsufficientStockException;
 import com.estore.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,7 @@ public class InventoryService {
     public void decreaseStock(Long productId, Integer quantity) {
         Inventory inventory = getInventoryByProductId(productId);
         if (inventory.getQuantity() < quantity) {
-            throw new RuntimeException("Insufficient stock for product: " + productId);
+            throw new InsufficientStockException("Insufficient stock for product: " + productId);
         }
         inventory.setQuantity(inventory.getQuantity() - quantity);
         inventoryRepository.save(inventory);

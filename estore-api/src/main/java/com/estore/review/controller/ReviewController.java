@@ -1,12 +1,12 @@
 package com.estore.review.controller;
 
-import com.estore.customer.entity.User;
-import com.estore.customer.repository.UserRepository;
-import com.estore.exception.ResourceNotFoundException;
+import com.estore.config.UserHelper;
 import com.estore.review.service.ReviewService;
 import com.estore.shared.dto.CreateReviewRequest;
 import com.estore.shared.dto.ReviewResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewController {
     private final ReviewService reviewService;
-    private final UserRepository userRepository;
+    private final UserHelper userHelper;
 
     @GetMapping
     public List<ReviewResponse> getReviewsByProduct(@PathVariable Long productId) {
@@ -25,11 +25,11 @@ public class ReviewController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ReviewResponse createReview(@PathVariable Long productId,
-                                        @RequestBody CreateReviewRequest request,
+                                        @Valid @RequestBody CreateReviewRequest request,
                                         Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var user = userHelper.getCurrentUser(authentication);
 
         String userName = user.getProfile() != null
                 ? user.getProfile().getFirstName() + " " + user.getProfile().getLastName()

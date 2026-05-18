@@ -1,7 +1,5 @@
 package com.estore.customer.service;
 
-import com.estore.billing.entity.Order;
-import com.estore.billing.repository.OrderRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
 import com.estore.exception.ResourceNotFoundException;
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserManagementService {
     private final UserRepository userRepository;
-    private final OrderRepository orderRepository;
 
     public PaginatedResponse<UserResponse> getAllUsers(int page, int limit) {
         if (page < 1) page = 1;
@@ -71,9 +68,8 @@ public class UserManagementService {
                 : user.getEmail();
         name = name.trim();
 
-        List<Order> orders = orderRepository.findByUserId(user.getId());
-        long orderCount = orders.size();
-        double totalSpent = orders.stream().mapToDouble(Order::getTotalAmount).sum();
+        long orderCount = userRepository.countOrdersByUserId(user.getId());
+        double totalSpent = userRepository.totalSpentByUserId(user.getId());
 
         return UserResponse.builder()
                 .id(user.getId())

@@ -109,21 +109,38 @@ public class CatalogService {
 
         Page<Product> productPage;
 
-        if (categoryId != null) {
-            productPage = productRepository.findByCategoryId(categoryId, pageable);
-        } else if (q != null && !q.isBlank()) {
-            productPage = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(q, q, pageable);
-        } else {
-            productPage = productRepository.findAll(pageable);
+        boolean hasBrandsFilter = brands != null && !brands.isEmpty();
+        boolean hasSimpleFilters = hasBrandsFilter;
+
+        if (hasSimpleFilters) {
+            List<Product> allMatching = productRepository.findFiltered(
+                    categoryId, q, brand, inStock, minPrice, maxPrice, minRating, Pageable.unpaged()).getContent();
+
+            if (hasBrandsFilter) {
+                allMatching = allMatching.stream()
+                        .filter(p -> p.getBrandName() != null && brands.contains(p.getBrandName()))
+                        .collect(Collectors.toList());
+            }
+
+            int total = allMatching.size();
+            int start = (page - 1) * limit;
+            int end = Math.min(start + limit, total);
+            List<ProductResponse> data = allMatching.subList(Math.min(start, total), end).stream()
+                    .map(this::convertToProductResponse)
+                    .collect(Collectors.toList());
+
+            return PaginatedResponse.<ProductResponse>builder()
+                    .data(data)
+                    .total(total)
+                    .page(page)
+                    .limit(limit)
+                    .totalPages((int) Math.ceil((double) total / limit))
+                    .build();
         }
 
+        productPage = productRepository.findFiltered(categoryId, q, brand, inStock, minPrice, maxPrice, minRating, pageable);
+
         List<ProductResponse> data = productPage.getContent().stream()
-                .filter(p -> brand == null || p.getBrandName() != null && p.getBrandName().equalsIgnoreCase(brand))
-                .filter(p -> inStock == null || inStock == (p.getStock() > 0))
-                .filter(p -> minPrice == null || p.getCurrentPrice() >= minPrice)
-                .filter(p -> maxPrice == null || p.getCurrentPrice() <= maxPrice)
-                .filter(p -> minRating == null || p.getRating() == null || p.getRating() >= minRating)
-                .filter(p -> brands == null || brands.isEmpty() || (p.getBrandName() != null && brands.contains(p.getBrandName())))
                 .map(this::convertToProductResponse)
                 .collect(Collectors.toList());
 
@@ -144,7 +161,7 @@ public class CatalogService {
 
     public List<ProductResponse> getPopularProducts(int limit) {
         if (limit < 1) limit = 8;
-        Pageable pageable = PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "rating"));
         return productRepository.findAll(pageable).stream()
                 .map(this::convertToProductResponse)
                 .collect(Collectors.toList());
@@ -152,14 +169,8 @@ public class CatalogService {
 
     public List<ProductResponse> getSalesProducts(int limit) {
         if (limit < 1) limit = 3;
-        return productRepository.findAll().stream()
-                .filter(p -> p.getOldPrice() != null && p.getOldPrice() > p.getCurrentPrice())
-                .sorted((a, b) -> {
-                    double discA = (a.getOldPrice() - a.getCurrentPrice()) / a.getOldPrice();
-                    double discB = (b.getOldPrice() - b.getCurrentPrice()) / b.getOldPrice();
-                    return Double.compare(discB, discA);
-                })
-                .limit(limit)
+        Pageable pageable = PageRequest.of(0, limit);
+        return productRepository.findSalesProducts(pageable).stream()
                 .map(this::convertToProductResponse)
                 .collect(Collectors.toList());
     }

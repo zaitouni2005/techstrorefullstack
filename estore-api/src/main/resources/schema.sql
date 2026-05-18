@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    status VARCHAR(255),
+    created_at DATETIME,
     role_id BIGINT,
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
@@ -37,8 +39,11 @@ CREATE TABLE IF NOT EXISTS brands (
 CREATE TABLE IF NOT EXISTS categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255),
     description TEXT,
-    image_url VARCHAR(255)
+    image_url VARCHAR(255),
+    created_at DATETIME,
+    updated_at DATETIME
 );
 
 -- Products Table
@@ -48,6 +53,10 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     current_price DOUBLE NOT NULL,
     old_price DOUBLE,
+    specs_json TEXT,
+    rating DOUBLE,
+    created_at DATETIME,
+    updated_at DATETIME,
     category_id BIGINT,
     brand_id BIGINT,
     FOREIGN KEY (category_id) REFERENCES categories(id),
@@ -94,9 +103,16 @@ CREATE TABLE IF NOT EXISTS cart_items (
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT,
+    customer_name VARCHAR(255),
     order_date DATETIME,
     total_amount DOUBLE,
     status VARCHAR(50),
+    shipping_address VARCHAR(255),
+    payment_method VARCHAR(255),
+    tracking_json TEXT,
+    status_history_json TEXT,
+    created_at DATETIME,
+    updated_at DATETIME,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -107,6 +123,15 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_id BIGINT,
     quantity INT NOT NULL,
     unit_price DOUBLE NOT NULL,
+    name VARCHAR(255),
+    image VARCHAR(255),
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Newsletter Subscriptions Table
+CREATE TABLE IF NOT EXISTS newsletter_subscriptions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME
 );
