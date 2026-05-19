@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Truck, CreditCard, ShieldCheck, ArrowLeft, Loader2, Clock } from "lucide-react";
+import {
+  ShoppingBag,
+  Truck,
+  CreditCard,
+  ShieldCheck,
+  ArrowLeft,
+  Loader2,
+  Clock,
+} from "lucide-react";
 import { Link, useNavigate, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/services/api";
@@ -47,12 +55,12 @@ export function CheckoutPage() {
     setLoading(true);
     try {
       const order = await api.orders.create({
-        items: items.map((i) => ({ productId: i.product.id, quantity: i.qty })),
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         shippingAddress: `${shipping.firstName} ${shipping.lastName}, ${shipping.address}, ${shipping.zip} ${shipping.city}`,
         paymentMethod: payMethod,
       });
       toast.success("Commande confirmée !");
-      clear();
+      await clear();
       navigate(`/orders/${order.id}`);
     } catch {
       toast.error("Erreur lors de la commande");
@@ -160,17 +168,17 @@ export function CheckoutPage() {
             </h2>
             <div className="space-y-4 max-h-75 overflow-auto pr-2 scrollbar-thin">
               {items.map((item) => (
-                <div key={item.product.id} className="flex gap-3 text-sm">
+                <div key={item.productId} className="flex gap-3 text-sm">
                   <img
-                    src={item.product.mainImage}
-                    alt={item.product.name}
+                    src={item.image}
+                    alt={item.name}
                     className="h-14 w-14 rounded-xl object-cover border border-border"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold line-clamp-1">{item.product.name}</div>
-                    <div className="text-muted-foreground text-xs">Quantité: {item.qty}</div>
+                    <div className="font-semibold line-clamp-1">{item.name}</div>
+                    <div className="text-muted-foreground text-xs">Quantité: {item.quantity}</div>
                   </div>
-                  <div className="font-bold">{(item.product.price * item.qty).toFixed(2)}€</div>
+                  <div className="font-bold">{(item.price * item.quantity).toFixed(2)}€</div>
                 </div>
               ))}
             </div>
@@ -196,11 +204,7 @@ export function CheckoutPage() {
               disabled={loading}
               className="mt-8 w-full rounded-2xl h-12 text-sm font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                `Passer la commande`
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Passer la commande`}
             </Button>
             <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Paiement 100% sécurisé
@@ -255,10 +259,15 @@ function PayOption({ active, onClick, title, desc, comingSoon }: PayOptionProps)
       }`}
     >
       <div>
-        <div className={`font-bold ${active && !comingSoon ? "text-primary" : ""} flex items-center gap-2`}>
+        <div
+          className={`font-bold ${active && !comingSoon ? "text-primary" : ""} flex items-center gap-2`}
+        >
           {title}
           {comingSoon && (
-            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 h-5 font-semibold gap-1">
+            <Badge
+              variant="secondary"
+              className="rounded-full text-[10px] px-2 py-0 h-5 font-semibold gap-1"
+            >
               <Clock className="w-3 h-3" /> Bientôt disponible
             </Badge>
           )}

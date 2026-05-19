@@ -1,51 +1,64 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Product } from "@/types";
-
-export type CartItem = { product: Product; qty: number };
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import type { Product, CartItem } from "@/types";
+import { api } from "@/services/api";
+import { useAuth } from "./AuthContext";
 
 type CartCtx = {
   items: CartItem[];
   add: (p: Product, qty?: number) => void;
-  remove: (id: string) => void;
-  setQty: (id: string, qty: number) => void;
+  remove: (productId: string) => void;
+  setQty: (productId: string, qty: number) => void;
   clear: () => void;
   count: number;
   total: number;
 };
 
 const Ctx = createContext<CartCtx | null>(null);
-const KEY = "techstore_cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user, isReady } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
 
-  useEffect(() => {
+  const loadCart = useCallback(async () => {
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(KEY) : null;
-      if (raw) setItems(JSON.parse(raw));
-    } catch (error) {
-      console.error("Failed to load cart from local storage", error);
+      const cart = await api.cart.get();
+      setItems(cart.items);
+    } catch {
+      setItems([]);
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(items));
-  }, [items]);
+    if (!isReady) return;
+    if (user) {
+      loadCart();
+    } else {
+      setItems([]);
+    }
+  }, [user, isReady, loadCart]);
 
-  const add: CartCtx["add"] = (p, qty = 1) => {
-    setItems((cur) => {
-      const exist = cur.find((i) => i.product.id === p.id);
-      if (exist) return cur.map((i) => (i.product.id === p.id ? { ...i, qty: i.qty + qty } : i));
-      return [...cur, { product: p, qty }];
-    });
-  };
-  const remove: CartCtx["remove"] = (id) => setItems((c) => c.filter((i) => i.product.id !== id));
-  const setQty: CartCtx["setQty"] = (id, qty) =>
-    setItems((c) => c.map((i) => (i.product.id === id ? { ...i, qty: Math.max(1, qty) } : i)));
-  const clear = () => setItems([]);
+  const add: CartCtx["add"] = useCallback(async (p, qty = 1) => {
+    const cart = await api.cart.addItem(p.id, qty);
+    setItems(cart.items);
+  }, []);
 
-  const count = items.reduce((s, i) => s + i.qty, 0);
-  const total = items.reduce((s, i) => s + i.qty * i.product.price, 0);
+  const remove: CartCtx["remove"] = useCallback(async (productId) => {
+    const cart = await api.cart.removeItem(productId);
+    setItems(cart.items);
+  }, []);
+
+  const setQty: CartCtx["setQty"] = useCallback(async (productId, qty) => {
+    const cart = await api.cart.updateItem(productId, Math.max(1, qty));
+    setItems(cart.items);
+  }, []);
+
+  const clear = useCallback(async () => {
+    await api.cart.clear();
+    setItems([]);
+  }, []);
+
+  const count = items.reduce((s, i) => s + i.quantity, 0);
+  const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
 
   return (
     <Ctx.Provider value={{ items, add, remove, setQty, clear, count, total }}>

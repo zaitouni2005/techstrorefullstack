@@ -45,16 +45,19 @@ export function OrderTrackingPage() {
       return;
     }
     if (!id) return;
-    api.orders.get(id).then((data) => {
-      if (data.customerId !== user.email) {
+    api.orders
+      .get(id)
+      .then((data) => {
+        if (data.customerId !== user.email) {
+          navigate("/orders", { replace: true });
+          return;
+        }
+        setOrder(data);
+        setLoading(false);
+      })
+      .catch(() => {
         navigate("/orders", { replace: true });
-        return;
-      }
-      setOrder(data);
-      setLoading(false);
-    }).catch(() => {
-      navigate("/orders", { replace: true });
-    });
+      });
   }, [id, user, navigate]);
 
   if (loading) {
@@ -139,13 +142,17 @@ export function OrderTrackingPage() {
                           {isCompleted ? (
                             <Check className="h-5 w-5" />
                           ) : (
-                            <div className={`h-2.5 w-2.5 rounded-full ${isCurrent ? "bg-white" : "bg-muted-foreground/40"}`} />
+                            <div
+                              className={`h-2.5 w-2.5 rounded-full ${isCurrent ? "bg-white" : "bg-muted-foreground/40"}`}
+                            />
                           )}
                         </div>
                         <div className="pt-1.5 min-w-0 flex-1">
                           <div
                             className={`font-bold text-sm ${
-                              isCompleted || isCurrent ? "text-foreground" : "text-muted-foreground/60"
+                              isCompleted || isCurrent
+                                ? "text-foreground"
+                                : "text-muted-foreground/60"
                             }`}
                           >
                             {statusLabels[step]}
@@ -181,7 +188,9 @@ export function OrderTrackingPage() {
           {/* Cancelled / Return requested */}
           {isCancelled && (
             <div className="rounded-2xl border border-border bg-card p-8 text-center">
-              <div className={`text-lg font-bold mb-2 ${order.status === "cancelled" ? "text-destructive" : "text-purple-600"}`}>
+              <div
+                className={`text-lg font-bold mb-2 ${order.status === "cancelled" ? "text-destructive" : "text-purple-600"}`}
+              >
                 {order.status === "cancelled" ? "Commande annulée" : "Retour demandé"}
               </div>
               <p className="text-sm text-muted-foreground">
@@ -214,11 +223,7 @@ export function OrderTrackingPage() {
                 </div>
               </div>
               {tracking.url && (
-                <Button
-                  variant="outline"
-                  className="mt-6 rounded-xl w-full"
-                  asChild
-                >
+                <Button variant="outline" className="mt-6 rounded-xl w-full" asChild>
                   <a href={tracking.url} target="_blank" rel="noopener noreferrer">
                     Suivre sur le site du transporteur
                   </a>
@@ -240,9 +245,7 @@ export function OrderTrackingPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-sm line-clamp-1">{item.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Qté: {item.quantity}
-                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Qté: {item.quantity}</div>
                     <div className="font-bold text-sm mt-1">
                       {(item.unitPrice * item.quantity).toFixed(2)} €
                     </div>
@@ -268,12 +271,16 @@ export function OrderTrackingPage() {
 
           <div className="rounded-2xl border border-border bg-card p-8">
             <h2 className="font-display text-lg font-bold mb-4">Adresse de livraison</h2>
-            <p className="text-sm text-muted-foreground">{order.shippingAddress || "Non renseignée"}</p>
+            <p className="text-sm text-muted-foreground">
+              {order.shippingAddress || "Non renseignée"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-8">
             <h2 className="font-display text-lg font-bold mb-4">Paiement</h2>
-            <p className="text-sm text-muted-foreground">{order.paymentMethod || "Non renseigné"}</p>
+            <p className="text-sm text-muted-foreground">
+              {order.paymentMethod || "Non renseigné"}
+            </p>
           </div>
         </div>
       </div>

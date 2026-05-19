@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const rootElement = document.getElementById("root");
 
 async function enableMocking() {
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NODE_ENV !== "development" || import.meta.env.VITE_DISABLE_MSW === "true") {
     return;
   }
   const { worker } = await import("./mocks/browser");

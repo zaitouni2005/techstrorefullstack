@@ -34,11 +34,15 @@ export function ProductCard({ product }: { product: Product }) {
         />
         <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-2 p-4 transition duration-300 group-hover:translate-y-0">
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              add(product);
-              toast.success(`${product.name} ajouté`);
+              try {
+                await add(product);
+                toast.success(`${product.name} ajouté`);
+              } catch {
+                toast.error("Erreur lors de l'ajout au panier");
+              }
             }}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary-glow transition"
           >

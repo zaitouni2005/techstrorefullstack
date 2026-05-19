@@ -13,6 +13,8 @@ import {
   type ShippingOption,
 } from "@/types";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
 const getToken = () => localStorage.getItem("token");
 
 export class ApiError extends Error {
@@ -35,7 +37,7 @@ const request = async <T>(url: string, options: RequestInit = {}): Promise<T> =>
     delete headers["Content-Type"];
   }
 
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(`${API_BASE}${url}`, { ...options, headers });
 
   if (!response.ok) {
     let body: { error?: string; details?: Record<string, string[]> } | undefined;
@@ -166,7 +168,7 @@ export const api = {
     addItem: (productId: string, quantity = 1) =>
       request<Cart>("/api/cart/items", {
         method: "POST",
-        body: JSON.stringify({ productId, quantity }),
+        body: JSON.stringify({ productId: Number(productId), quantity }),
       }),
     updateItem: (productId: string, quantity: number) =>
       request<Cart>(`/api/cart/items/${productId}`, {

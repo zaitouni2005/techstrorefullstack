@@ -82,9 +82,7 @@ export function ProfilePage() {
             <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center mb-4 border-4 border-background shadow-xl">
               <User className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {user ? `${user.firstName} ${user.lastName}` : "Utilisateur"}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{user ? `${user.firstName} ${user.lastName}` : "Utilisateur"}</h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">{user?.email || ""}</p>
             {memberSince && (
               <Badge

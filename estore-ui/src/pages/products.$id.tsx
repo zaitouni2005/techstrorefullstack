@@ -289,9 +289,13 @@ export function ProductDetailPage() {
           <div className="grid sm:grid-cols-2 gap-4 mb-12">
             <Button
               size="lg"
-              onClick={() => {
-                add(product);
-                toast.success(`${product.name} ajouté au panier`);
+              onClick={async () => {
+                try {
+                  await add(product);
+                  toast.success(`${product.name} ajouté au panier`);
+                } catch {
+                  toast.error("Erreur lors de l'ajout au panier");
+                }
               }}
               className="h-16 rounded-2xl text-lg font-bold gap-3 shadow-(--shadow-elegant) active:scale-95"
             >
@@ -301,9 +305,13 @@ export function ProductDetailPage() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => {
-                add(product);
-                navigate("/cart");
+              onClick={async () => {
+                try {
+                  await add(product);
+                  navigate("/cart");
+                } catch {
+                  toast.error("Erreur lors de l'ajout au panier");
+                }
               }}
               className="h-16 rounded-2xl text-lg font-bold border-2 active:scale-95"
             >

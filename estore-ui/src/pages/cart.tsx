@@ -32,39 +32,36 @@ export function CartPage() {
           <div className="space-y-3">
             {items.map((item) => (
               <div
-                key={item.product.id}
+                key={item.productId}
                 className="flex gap-4 rounded-2xl border border-border bg-card p-4"
               >
-                <Link to={`/products/${item.product.id}`} className="shrink-0">
+                <Link to={`/products/${item.productId}`} className="shrink-0">
                   <img
-                    src={item.product.mainImage}
-                    alt={item.product.name}
+                    src={item.image}
+                    alt={item.name}
                     className="h-24 w-24 rounded-xl object-cover bg-surface"
                   />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-muted-foreground">{item.product.brand}</div>
                   <Link
-                    to={`/products/${item.product.id}`}
+                    to={`/products/${item.productId}`}
                     className="font-display font-semibold hover:text-primary transition line-clamp-1"
                   >
-                    {item.product.name}
+                    {item.name}
                   </Link>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {item.product.price} € / unité
-                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">{item.price} € / unité</div>
                   <div className="mt-3 flex items-center justify-between">
                     <div className="inline-flex items-center rounded-full border border-border">
                       <button
-                        onClick={() => setQty(item.product.id, item.qty - 1)}
+                        onClick={() => setQty(item.productId, item.quantity - 1)}
                         className="grid h-8 w-8 place-items-center hover:bg-accent rounded-full"
                         aria-label="Diminuer"
                       >
                         <Minus className="h-3 w-3" />
                       </button>
-                      <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                      <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
                       <button
-                        onClick={() => setQty(item.product.id, item.qty + 1)}
+                        onClick={() => setQty(item.productId, item.quantity + 1)}
                         className="grid h-8 w-8 place-items-center hover:bg-accent rounded-full"
                         aria-label="Augmenter"
                       >
@@ -72,12 +69,12 @@ export function CartPage() {
                       </button>
                     </div>
                     <div className="font-display font-bold">
-                      {(item.product.price * item.qty).toFixed(2)} €
+                      {(item.price * item.quantity).toFixed(2)} €
                     </div>
                   </div>
                 </div>
                 <button
-                  onClick={() => remove(item.product.id)}
+                  onClick={() => remove(item.productId)}
                   className="self-start text-muted-foreground hover:text-destructive transition"
                   aria-label="Supprimer"
                 >

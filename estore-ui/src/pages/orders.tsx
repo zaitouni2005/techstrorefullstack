@@ -105,9 +105,7 @@ export function OrdersPage() {
                   )}
                 </div>
                 <div>
-                  <div className="font-bold text-sm text-muted-foreground mb-0.5">
-                    {order.id}
-                  </div>
+                  <div className="font-bold text-sm text-muted-foreground mb-0.5">{order.id}</div>
                   <div className="font-semibold">{order.items.map((i) => i.name).join(", ")}</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {new Date(order.date).toLocaleDateString("fr-FR", {
